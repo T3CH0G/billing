@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Session;
+use DB;
+use Mail;
 use App\User;
+use Validator;
+use Illuminate\Http\Request;
+use App\Mail\EmailVerification;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 
 class RegisterController extends Controller
@@ -27,7 +32,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/';
 
     /**
      * Create a new controller instance.
@@ -48,9 +53,9 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'name' => 'required|max:255',
+            'email' => 'required|email|max:255|unique:users',
+            'password' => 'required|min:6|confirmed',
         ]);
     }
 
@@ -66,6 +71,39 @@ class RegisterController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
+            'email_token' => str_random(10),
         ]);
     }
+
+    public function register(Request $request)
+    {
+        // Laravel validation
+        $validator = $this->validator($request->all());
+        if ($validator->fails()) 
+        {
+            $this->throwValidationException($request, $validator);
+        }
+        DB::beginTransaction();
+        try
+        {
+            $user = $this->create($request->all());
+            $email = new EmailVerification(new User(['email_token' => $user->email_token, 'name' => $user->name]));
+            Mail::to($user->email)->send($email);
+            DB::commit();
+            Session::flash('flash_message', 'Verification email sent, please check your email to verify your account.');
+            return view('welcome');
+        }
+        catch(Exception $e)
+        {
+            DB::rollback(); 
+            return view('welcome');
+        }
+    }
+
+    public function verify($token)
+    {
+        User::where('email_token',$token)->firstOrFail()->verified();
+        return redirect('login');
+    }
 }
+

@@ -1,4 +1,6 @@
 <?php
+use Illuminate\Support\Facades\Auth;
+use App\Mail\Breakdown;
 
 /*
 |--------------------------------------------------------------------------
@@ -11,10 +13,30 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+/*profile and registration routes*/
+Auth::routes();
+Route::get('/home','HomeController@index');
+Route::get('/', 'UsersController@profile');
+Route::get('register/verify/{token}', 'Auth\RegisterController@verify');
+/*CRUD routes*/
+Route::resource('/quotations', 'QuotationsController');
+Route::resource('/invoices', 'InvoicesController');
+Route::resource('/clients', 'ClientsController');
+Route::resource('/companies', 'CompaniesController');
+Route::resource('/users', 'UsersController');
+Route::resource('/payment_terms', 'PaymentTermsController');
+Route::get('/quotations/create/{id}','QuotationsController@create');
+Route::get('/payment_terms/create/{id}','PaymentTermsController@create');
+/*Other routes*/
+Route::get('/approvequotation/{id}', 'QuotationsController@approve');
+Route::get('/approveinvoice/{id}', 'InvoicesController@approve');
+Route::get('/companies/sales/{id}', 'CompaniesController@sales');  
+Route::get('/breakdown', 'UsersController@breakdown');
+/*Email route*/
+Route::get('/mail', function () {
+	$user=Auth::user();
+    Mail::to($user->email)->send(new Breakdown);
+    return view('emails.sent');
 });
 
-Auth::routes();
 
-Route::get('/home', 'HomeController@index');
