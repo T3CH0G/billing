@@ -6,6 +6,8 @@ use Session;
 use DB;
 use Mail;
 use App\User;
+use App\Company;
+use App\Client;
 use Validator;
 use Illuminate\Http\Request;
 use App\Mail\EmailVerification;
@@ -91,7 +93,9 @@ class RegisterController extends Controller
             Mail::to($user->email)->send($email);
             DB::commit();
             Session::flash('flash_message', 'Verification email sent, please check your email to verify your account.');
-            return view('welcome');
+            $companies = Company::where('user_id',$user->id)->get();
+            $clients = Client::where('user_id',$user->id)->get();
+            return view('welcome',compact('user','companies','clients'));
         }
         catch(Exception $e)
         {

@@ -132,7 +132,7 @@
         <a href="{{ route('invoices.show', $invoice->id) }}" class="btn btn-info">View invoice</a>
         </p>
       @endforeach
-    <a href="{{ route('invoices.create') }}" class="btn btn-info">Create New Quotation</a>
+    <a href="{{ route('invoices.create') }}" class="btn btn-info">Create New Invoice</a>
 </div>
 <hr>
 

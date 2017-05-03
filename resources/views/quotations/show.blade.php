@@ -90,7 +90,7 @@
 
                       <td colspan="2" class="blank"> </td>
                       <td colspan="2" class="total-line balance">Total</td>
-                      <td class="total-value balance"><div id="total">{{$quotation->total}}</div></td>
+                      <td class="total-value balance"><div id="total">{{$quotation->total}} {{$quotation->currency}}</div></td>
                   </tr>
                   <!-- SGD Total !-->
 

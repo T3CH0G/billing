@@ -74,7 +74,8 @@ class QuotationsController extends Controller
         'subtotal'=>'required',
         'total'=>'required',
         'user_id' => 'required',
-        'payment_type'=>'required'
+        'payment_type'=>'required',
+        'currency' => 'required'
         ]);
         $client_id = $request->client_id;
         $client=Client::findOrFail($client_id);
@@ -106,10 +107,6 @@ class QuotationsController extends Controller
         $subtotal=$total;
         $input['subtotal']=$subtotal;
         $total=$total*((100-$discount)/100);
-        if($client->country == 'SGD')
-            {
-                $total=$total*3;
-            }
         $input['total']=$total;
         $input['item']=serialize($input['item']);
         $input['description']=serialize($input['description']);

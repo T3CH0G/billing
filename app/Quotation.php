@@ -22,7 +22,8 @@ class Quotation extends Model
         'amount_paid',
         'total',
         'subtotal',
-        'user_id'
+        'user_id',
+        'currency'
     ];
 
     public function client()

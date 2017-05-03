@@ -65,6 +65,11 @@
                     {!! Form::text('amount_paid', 0, ['class' => 'form-control']) !!}
                 </div>
                 <div class="col-md-12">
+                    <h3> Currency </h3>
+                    {!! Form::label('currency', 'Currency:', ['class' => 'control-label']) !!}
+                    {!! Form::select('currency', array('SGD' => 'SGD', 'MYR'=>'MYR'), 'MYR', ['class' => 'form-control']) !!}
+                </div>
+                <div class="col-md-12">
                     {!! Form::submit('Create New quotations', ['class' => 'btn btn-primary']) !!}
                 </div>
             {!! Form::close() !!}

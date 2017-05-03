@@ -72,6 +72,11 @@
     {!! Form::label('amount_paid', 'Amount Paid if applicable(otherwise leave at 0):', ['class' => 'control-label']) !!}
     {!! Form::text('amount_paid', $quotation->amount_paid, ['class' => 'form-control']) !!}
 </div>
+    <div class="col-md-12">
+        <h3> Currency </h3>
+        {!! Form::label('currency', 'Currency:', ['class' => 'control-label']) !!}
+        {{!! Form::select('currency', array('SGD' => 'SGD', 'MYR'=>'MYR'), 'MYR', ['class' => 'form-control']) !!}
+    </div>
 <div class="col-md-12">
 {!! Form::submit('Update quotation', ['class' => 'btn btn-primary']) !!}
 </div>
