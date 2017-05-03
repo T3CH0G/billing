@@ -1,7 +1,10 @@
 <?php
 
 namespace App\Console;
-
+use App\Mail\Breakdown;
+use App\User;
+use Mail;
+use DB;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -24,8 +27,41 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')
-        //          ->hourly();
+        $schedule->call(function () {
+            $users=User::where('email_frequency','Every Minute')->get();
+            foreach($users as $user)
+            {   
+                $email=$user->email;
+                Mail::to($email)->send(new Breakdown($user));
+            }
+        })->everyMinute();
+
+        $schedule->call(function () {
+            $users=User::where('email_frequency','Daily')->get();
+            foreach($users as $user)
+            {   
+                $email=$user->email;
+                Mail::to($email)->send(new Breakdown($user));
+            }
+        })->daily();
+
+        $schedule->call(function () {
+            $users=User::where('email_frequency','Weekly')->get();
+            foreach($users as $user)
+            {   
+                $email=$user->email;
+                Mail::to($email)->send(new Breakdown($user));
+            }
+        })->weekly();
+
+        $schedule->call(function () {
+            $users=User::where('email_frequency','Monthly')->get();
+            foreach($users as $user)
+            {   
+                $email=$user->email;
+                Mail::to($email)->send(new Breakdown($user));
+            }
+        })->monthly();
     }
 
     /**

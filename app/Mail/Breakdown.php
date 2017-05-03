@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Auth;
 use App\Quotation;
 use App\Invoice;
+use App\User;
 use Illuminate\Http\Request;
 use Session;
 use Illuminate\Bus\Queueable;
@@ -22,9 +23,10 @@ class Breakdown extends Mailable
      *
      * @return void
      */
-    public function __construct()
+    protected $user;
+    public function __construct(User $user)
     {
-        //
+        $this->user = $user;
     }
 
     /**
@@ -36,9 +38,10 @@ class Breakdown extends Mailable
     {   
         $now = Carbon::now(); 
         $now = $now->month;
-        $user=Auth::user();
-        $quotations = Quotation::where('user_id',$user->id)->whereMonth('created_at',$now)->get();
-        $invoices = Invoice::where('user_id',$user->id)->whereMonth('created_at',$now)->get();
+        $id= $this->user->id;
+        $user= $this->user;
+        $quotations = Quotation::where('user_id',$id)->whereMonth('created_at',$now)->get();
+        $invoices = Invoice::where('user_id',$id)->whereMonth('created_at',$now)->get();
         return $this->view('emails.welcome',compact('user','quotations','invoices'));
     }
 

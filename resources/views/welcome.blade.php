@@ -224,7 +224,7 @@
                     Accounting App
                 </div>
                 <div class="container">
-                Please verify your account by clicking the link sent to your email.
+                Please verify your account by clicking the link sent to {{Auth::user()->email}}.
                 </div>
             </div>
             @else
