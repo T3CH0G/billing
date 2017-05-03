@@ -217,6 +217,16 @@
         </div>
     </body>
                 </div>
+
+            @elseif(Auth::user()->verified=='0')
+            <div class="content">
+                <div class="title m-b-md">
+                    Accounting App
+                </div>
+                <div class="container">
+                Please verify your account by clicking the link sent to your email.
+                </div>
+            </div>
             @else
                 <div class="content">
                 <div class="title m-b-md">
