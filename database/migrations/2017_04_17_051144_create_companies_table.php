@@ -17,7 +17,7 @@ class CreateCompaniesTable extends Migration
             $table->increments('id');
             $table->integer('user_id');
             $table->string('name');
-            $table->string('imageName');
+            $table->string('imageName')->nullable();
             $table->string('address1')->nullable();
             $table->string('address2')->nullable();
             $table->string('address3')->nullable();
@@ -26,7 +26,7 @@ class CreateCompaniesTable extends Migration
             $table->string('registration_number')->nullable();
             $table->string('bank_account_MY')->nullable();
             $table->string('bank_account_SG')->nullable();
-            $table->string('GST');
+            $table->string('GST')->nullable();
             $table->timestamps();
 
         });

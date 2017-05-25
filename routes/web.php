@@ -22,7 +22,6 @@ Route::get('register/verify/{token}', 'Auth\RegisterController@verify');
 Route::resource('/quotations', 'QuotationsController');
 Route::resource('/invoices', 'InvoicesController');
 Route::resource('/clients', 'ClientsController');
-Route::resource('/companies', 'CompaniesController');
 Route::resource('/users', 'UsersController');
 Route::resource('/payment_terms', 'PaymentTermsController');
 Route::get('/quotations/create/{id}','QuotationsController@create');
@@ -37,6 +36,17 @@ Route::get('/mail', function () {
 	$user=Auth::user();
     Mail::to($user->email)->send(new Breakdown);
     return view('emails.sent');
+});
+
+Route::group(['middleware' => 'cors', 'prefix' => 'api'], function()
+{
+    Route::resource('authenticate', 'AuthenticateController', ['only' => ['index']]);
+    Route::post('authenticate', 'AuthenticateController@authenticate');
+    Route::get('authenticate/user', 'AuthenticateController@getAuthenticatedUser');
+});
+ 
+Route::group(['middleware' => 'cors', 'prefix' => 'api'], function(){
+	Route::resource('companies', 'CompaniesController');
 });
 
 

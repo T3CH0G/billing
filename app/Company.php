@@ -23,4 +23,8 @@ class Company extends Model
         'bank_account_SG',
         'GST'
     ];
+
+    public function user(){
+            return $this->belongsTo('App\User');
+        }
 }
