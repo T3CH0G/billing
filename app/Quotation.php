@@ -34,4 +34,8 @@ class Quotation extends Model
     {
         return $this->hasOne('App\Invoice');
     }
+    public function user()
+    {
+        return $this->hasOne('App\User');
+    }
 }

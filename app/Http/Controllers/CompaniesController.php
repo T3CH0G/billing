@@ -45,7 +45,8 @@ class CompaniesController extends Controller
             array('User'=>function($query){
                 $query->select('id','name');
             })
-            )->select('id', 'name', 'user_id')->paginate($limit); 
+            )->select('id', 'name', 'user_id','address1','address2','address3','address4','address5','registration_number','bank_account_MY','bank_account_SG'
+            )->paginate($limit); 
  
             $companies->appends(array(            
                 'limit' => $limit
@@ -123,13 +124,7 @@ class CompaniesController extends Controller
                 ]
             ], 404);
         }
-        $previous = Company::where('id', '<', $company->id)->max('id');
-        $next = Company::where('id', '>', $company->id)->min('id');
-        return \Response::json([
-            'previous_company_id'=> $previous,
-            'next_company_id'=> $next,
-            'data' => $this->transform($company)
-        ], 200);
+        return \Response::json($this->transform($company), 200);
         /*$company = Company::findOrFail($id);
         $uid=$company->user_id;
         $user = User::findOrFail($uid);
@@ -241,7 +236,15 @@ class CompaniesController extends Controller
     private function transform($company){
         return [
                'company_id' => $company['id'],
+               'address1' => $company['address1'],
+               'address2' => $company['address2'],
+               'address3' => $company['address3'],
+               'address4' => $company['address4'],
+               'address5' => $company['address5'],
                'company' => $company['name'],
+               'registration_number' => $company['registration_number'],
+               'bank_account_SG'=> $company['bank_account_SG'],
+               'bank_account_MY'=> $company['bank_account_MY'],
                'submitted_by' => $company['user']['name']
             ];
     }

@@ -12,10 +12,43 @@ use Illuminate\Support\Facades\DB;
 
 class ClientsController extends Controller
 {
-    public function index()
-    {
-        $clients = Client::all();
-        return view('clients.index',compact('clients'));
+    public function __construct(){
+            $this->middleware('jwt.auth');
+    }
+
+
+    public function index(Request $request)
+    {      
+        $search_term = $request->input('search');
+        $limit = $request->input('limit')?$request->input('limit'):5;
+ 
+        if ($search_term)
+        {
+            $clients = Client::orderBy('id', 'DESC')->where('name', 'LIKE', "%$search_term%")->with(
+            array('User'=>function($query){
+                $query->select('id','name');
+            })
+            )->select('id', 'name', 'user_id')->paginate($limit); 
+ 
+            $clients->appends(array(
+                'search' => $search_term,
+                'limit' => $limit
+            ));
+        }
+        else
+        {
+            $clients = Client::orderBy('id', 'DESC')->with(
+            array('User'=>function($query){
+                $query->select('id','name');
+            })
+            )->select('id', 'name', 'user_id','company_name','registration_number','contact_number','address','country','email')->paginate($limit); 
+ 
+            $clients->appends(array(            
+                'limit' => $limit
+            ));
+        }
+        
+        return \Response::json($this->transformCollection($clients), 200);
     }
     /**
      * Show the form for creating a new resource.
@@ -35,7 +68,20 @@ class ClientsController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
+        if(! $request->name or ! $request->user_id){
+            return \Response::json([
+                'error' => [
+                    'message' => 'Please Provide Both name and user_id'
+                ]
+            ], 422);
+        }
+        $client = Client::create($request->all());
+ 
+        return \Response::json([
+                'message' => 'Client Created Succesfully',
+                'data' => $this->transform($client)
+        ]);
+        /*$this->validate($request, [
         'name' => 'required',
         'company_name' => 'required',
         'registration_number' => 'required',
@@ -48,7 +94,7 @@ class ClientsController extends Controller
         $input['user_id'] = $uid;
         Client::create($input);
         Session::flash('flash_message', 'Client successfully added!');
-        return redirect()->back();
+        return redirect()->back();*/
     }
 
     /**
@@ -59,7 +105,20 @@ class ClientsController extends Controller
      */
     public function show($id)
     {
-        $client = Client::findOrFail($id);
+        $client = Client::with(
+            array('User'=>function($query){
+                $query->select('id','name');
+            })
+            )->find($id);
+        if(!$client){
+            return \Response::json([
+                'error' => [
+                    'message' => 'Client does not exist'
+                ]
+            ], 404);
+        }
+        return \Response::json($this->transform($client), 200);
+        /*$client = Client::findOrFail($id);
         $quotations = Quotation::where('client_id', $client->id)->get();
         $invoices=Invoice::where('client_id',$client->id)->get();
         $amount_paid=0;
@@ -81,7 +140,7 @@ class ClientsController extends Controller
                 $amount_paid=$amount_paid+$invoice['total'];
             }
         }
-        return view('clients.show',compact('amount_owed','amount_paid','quotations','invoices'))->withClient($client);
+        return view('clients.show',compact('amount_owed','amount_paid','quotations','invoices'))->withClient($client);*/
     }
 
     /**
@@ -103,9 +162,33 @@ class ClientsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update($id, Request $request)
     {
-        $client = Client::findOrFail($id);
+
+        if(! $request->name or ! $request->user_id){
+            return \Response::json([
+                'error' => [
+                    'message' => 'Please Provide Both name and user_id'
+                ]
+            ], 422);
+        }
+        
+        $client = Client::find($id);
+        $client['name'] = $request->name;
+        $client['user_id'] = $request->user_id;
+        $client['company_name'] = $request->company_name;
+        $client['registration_number'] = $request->registration_number;
+        $client['address'] = $request->address;
+        $client['country'] = $request->country;
+        $client['email'] = $request->email;
+        $client['contact_number'] = $request->contact_number;
+        $client->save(); 
+ 
+        return \Response::json([
+                'message' => 'Client Updated Succesfully'
+        ]);
+
+        /*$client = Client::findOrFail($id);
          $this->validate($request, [
             'name' => 'required',
             'company_name' => 'required',
@@ -116,7 +199,7 @@ class ClientsController extends Controller
         $input = $request->all();
         $client->fill($input)->save();
         Session::flash('flash_message', 'Client successfully added!');
-        return redirect()->back();
+        return redirect()->back();*/
     }
 
     /**
@@ -131,5 +214,35 @@ class ClientsController extends Controller
         $client->delete();
         Session::flash('flash_message', 'Client successfully deleted!');
         return redirect()->route('clients.index');
+    }
+
+    private function transformCollection($clients){
+        $clientsArray = $clients->toArray();
+        return [
+            'total' => $clientsArray['total'],
+            'per_page' => intval($clientsArray['per_page']),
+            'current_page' => $clientsArray['current_page'],
+            'last_page' => $clientsArray['last_page'],
+            'next_page_url' => $clientsArray['next_page_url'],
+            'prev_page_url' => $clientsArray['prev_page_url'],
+            'from' => $clientsArray['from'],
+            'to' =>$clientsArray['to'],
+            'data' => array_map([$this, 'transform'], $clientsArray['data'])
+        ];
+    }
+     
+    private function transform($client){
+        return [
+               'client_id' => $client['id'],
+               'user_id' => $client['user_id'],
+               'name' => $client['name'],
+               'company_name' => $client['company_name'],
+               'registration_number' => $client['registration_number'],
+               'address' => $client['address'],
+               'country' => $client['country'],
+               'email' => $client['email'],
+               'contact_number' => $client['contact_number'],
+               'submitted_by' => $client['user']['name']
+            ];
     }
 }

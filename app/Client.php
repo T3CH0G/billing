@@ -22,4 +22,8 @@ class Client extends Model
     {
         return $this->hasMany('App\Quotation');
     }
+
+    public function user(){
+        return $this->belongsTo('App\User');
+    }
 }

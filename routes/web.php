@@ -21,7 +21,6 @@ Route::get('register/verify/{token}', 'Auth\RegisterController@verify');
 /*CRUD routes*/
 Route::resource('/quotations', 'QuotationsController');
 Route::resource('/invoices', 'InvoicesController');
-Route::resource('/clients', 'ClientsController');
 Route::resource('/users', 'UsersController');
 Route::resource('/payment_terms', 'PaymentTermsController');
 Route::get('/quotations/create/{id}','QuotationsController@create');
@@ -48,5 +47,14 @@ Route::group(['middleware' => 'cors', 'prefix' => 'api'], function()
 Route::group(['middleware' => 'cors', 'prefix' => 'api'], function(){
 	Route::resource('companies', 'CompaniesController');
 });
+ 
+Route::group(['middleware' => 'cors', 'prefix' => 'api'], function(){
+	Route::resource('clients', 'ClientsController');
+});
+
+Route::group(['middleware' => 'cors', 'prefix' => 'api'], function(){
+	Route::resource('quotations', 'QuotationsController');
+});
+
 
 

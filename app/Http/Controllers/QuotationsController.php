@@ -15,11 +15,42 @@ use Illuminate\Support\Facades\DB;
 
 class QuotationsController extends Controller
 {
-    public function index()
-    {
-        $quotations = Quotation::all();
-        $title = 'All Quotations';
-        return view('quotations.index',compact('quotations','title'));
+public function __construct(){
+            $this->middleware('jwt.auth');
+    }
+
+
+    public function index(Request $request)
+    {      
+        $search_term = $request->input('search');
+        $limit = $request->input('limit')?$request->input('limit'):5;
+ 
+        if ($search_term)
+        {
+            $quotations = Quotation::orderBy('id', 'DESC')->where('name', 'LIKE', "%$search_term%")->with(
+            array('User'=>function($query){
+                $query->select('id','name');
+            })
+            )->select('id', 'name', 'user_id')->paginate($limit); 
+ 
+            $quotations->appends(array(
+                'search' => $search_term,
+                'limit' => $limit
+            ));
+        }
+        else
+        {
+            $quotations = Quotation::orderBy('id', 'DESC')->with(
+            array('User'=>function($query){
+                $query->select('id','name');
+            })
+            )->select('client_id','subject','item','description','cost','quantity','quotation_status','created_at','amount_paid','company_id','payment_type','currency','quotation_id')->paginate($limit); 
+ 
+            $quotations->appends(array(            
+                'limit' => $limit
+            ));
+        }
+        return \Response::json($this->transformCollection($quotations), 200);
     }
 
     /**
@@ -29,13 +60,13 @@ class QuotationsController extends Controller
      */
     public function create($id)
     {
-        $clients = Client::all();
+        $quotations = Client::all();
         $q = [];
-        foreach ($clients as $client)
+        foreach ($quotations as $client)
             {
                 $q[$client->id] = $client->name;
             }
-        $clients=$q;
+        $quotations=$q;
         $j=[];
         $j['Upfront 50%']='Upfront 50%';
         $j['60 days within live date']='60 days within live date';
@@ -48,7 +79,7 @@ class QuotationsController extends Controller
             }
         $payments=$j;
         $company=Company::findOrFail($id);
-        return view('quotations.create',compact('clients','company','payments'));
+        return view('quotations.create',compact('quotations','company','payments'));
     }
 
     /**
@@ -59,24 +90,12 @@ class QuotationsController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
-        'client_id' => 'required',
-        'quotation_id' => 'required',
-        'subject' => 'required',
-        'item' => 'required',
-        'description' => 'required',
-        'cost' => 'required',
-        'quantity' => 'required',
-        'quotation_status' => 'required',
-        'created_at' => 'required',
-        'amount_paid' => 'required',
-        'company_id'=>'required',
-        'subtotal'=>'required',
-        'total'=>'required',
-        'user_id' => 'required',
-        'payment_type'=>'required',
-        'currency' => 'required'
-        ]);
+        if(! $request->subject or ! $request->user_id){
+            return \Response::json([
+                'error' => [
+                    'message' => 'Please Provide Both subject and user_id'
+            ], 422]);
+        }
         $client_id = $request->client_id;
         $client=Client::findOrFail($client_id);
         $job_id = DB::table('clients')->where('id', $client_id)->value('job_number');
@@ -97,7 +116,7 @@ class QuotationsController extends Controller
             {
                 $input['quotation_id'] = $client_id.$job_id;
             }
-        $number=count($input['item']);
+        /*$number=count($input['item']);
         $total = 0;
         $discount = $input['discount'];
         for($i = 0; $i < $number; $i++)
@@ -107,17 +126,16 @@ class QuotationsController extends Controller
         $subtotal=$total;
         $input['subtotal']=$subtotal;
         $total=$total*((100-$discount)/100);
-        $input['total']=$total;
+        $input['total']=$total;*/
         $input['item']=serialize($input['item']);
         $input['description']=serialize($input['description']);
         $input['cost']=serialize($input['cost']);
         $input['quantity']=serialize($input['quantity']);
-        $user = Auth::user();
-        $uid = $user->id;
-        $input['user_id'] = $uid;
         Quotation::create($input);
-        Session::flash('flash_message', 'quotation successfully added!');
-        return redirect()->back();
+        return \Response::json([
+                'message' => 'Quotation Created Succesfully',
+                'data' => $this->transform($quotation)
+        ]);
     }
 
     /**
@@ -151,13 +169,13 @@ class QuotationsController extends Controller
     public function edit($id)
     {
         $quotation = Quotation::findOrFail($id);
-        $clients = Client::all();
+        $quotations = Client::all();
         $q = [];
-        foreach ($clients as $client)
+        foreach ($quotations as $client)
             {
                 $q[$client->id] = $client->name;
             }
-        $clients=$q;
+        $quotations=$q;
         $companies = Company::all();
         $j = [];
         foreach ($companies as $company)
@@ -170,7 +188,7 @@ class QuotationsController extends Controller
         $quotation['cost']=unserialize($quotation['cost']);
         $quotation['quantity']=unserialize($quotation['quantity']);
         $number=count($quotation['item']);
-        return view('quotations.edit',compact('clients','number','companies'))->withQuotation($quotation);
+        return view('quotations.edit',compact('quotations','number','companies'))->withQuotation($quotation);
     }
 
     /**
@@ -286,5 +304,39 @@ class QuotationsController extends Controller
         $quotation->save();
         Session::flash('flash_message', 'Invoice successfully added, quotation approved!');
         return view('quotations.approve',compact('invoice','quotation'));
+    }
+
+
+    private function transformCollection($quotations){
+        $quotationsArray = $quotations->toArray();
+        return [
+            'total' => $quotationsArray['total'],
+            'per_page' => intval($quotationsArray['per_page']),
+            'current_page' => $quotationsArray['current_page'],
+            'last_page' => $quotationsArray['last_page'],
+            'next_page_url' => $quotationsArray['next_page_url'],
+            'prev_page_url' => $quotationsArray['prev_page_url'],
+            'from' => $quotationsArray['from'],
+            'to' =>$quotationsArray['to'],
+            'data' => array_map([$this, 'transform'], $quotationsArray['data'])
+        ];
+    }
+     
+    private function transform($quotation){
+        return [
+
+               'client_id' => $quotation['client_id'],
+               'subject' => $quotation['subject'],
+               'item' => $quotation['item'],
+               'description' => $quotation['description'],
+               'cost' => $quotation['cost'],
+               'quantity' => $quotation['quantity'],
+               'quotation_status' => $quotation['quotation_status'],
+               'created_at' => $quotation['created_at'],
+               'amount_paid' => $quotation['amount_paid'],
+               'company_id' => $quotation['company_id'],
+               'payment_type' => $quotation['payment_type'],
+               'currency' => $quotation['currency'],
+            ];
     }
 }

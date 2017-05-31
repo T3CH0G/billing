@@ -37,4 +37,11 @@ class User extends Authenticatable
     public function companies(){
             return $this->hasMany('App\Company');
         }
+
+     public function clients(){
+            return $this->hasMany('App\Client');
+        }
+    public function quotations(){
+            return $this->hasMany('App\Quotation');
+        }
 }
